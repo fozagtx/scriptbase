@@ -206,8 +206,8 @@
     50% { opacity: 0.4; }
   }
 
-  /* iframe wrap — oversized + centered crops YouTube's letterboxing
-     so the silent loop looks edge-to-edge in the card. */
+  /* iframe wrap — tiny crop (110%) hides YouTube's chrome
+     without scaling enough to cause visible blur. */
   .iframe-wrap {
     position: absolute;
     inset: 0;
@@ -218,18 +218,50 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 175%;
-    height: 175%;
+    width: 110%;
+    height: 110%;
     transform: translate(-50%, -50%);
     border: 0;
     pointer-events: none;
   }
 
-  /* Once the user has clicked play, restore full controls and stop cropping. */
+  /* Once the user has clicked play, restore full size + interactivity. */
   .demo-media.playing .yt-iframe {
     width: 100%;
     height: 100%;
     pointer-events: auto;
+  }
+
+  /* Top mask hides YouTube's title bar that fades in on hover.
+     Bottom mask hides progress bar / control hints. */
+  .demo-media:not(.playing)::before,
+  .demo-media:not(.playing)::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .demo-media:not(.playing)::before {
+    top: 0;
+    height: 64px;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.55) 0%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  .demo-media:not(.playing)::after {
+    bottom: 0;
+    height: 90px;
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.65) 0%,
+      rgba(0, 0, 0, 0) 100%
+    );
   }
 
   .media-gradient {
@@ -237,8 +269,8 @@
     inset: 0;
     background: radial-gradient(
       ellipse at center,
-      rgba(0, 0, 0, 0) 30%,
-      rgba(0, 0, 0, 0.55) 100%
+      rgba(0, 0, 0, 0) 45%,
+      rgba(0, 0, 0, 0.35) 100%
     );
     pointer-events: none;
     z-index: 2;
