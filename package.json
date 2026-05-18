@@ -14,6 +14,7 @@
     "vite": "^6.0.7"
   },
   "dependencies": {
+    "@plausible-analytics/tracker": "^0.4.5",
     "marked": "^18.0.3"
   }
 }
