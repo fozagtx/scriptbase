@@ -53,7 +53,7 @@
       src={thumbHd}
       alt="Reference video thumbnail"
       loading="lazy"
-      on:error={handleImgError}
+      onerror={handleImgError}
     />
     <div class="video-overlay"></div>
 

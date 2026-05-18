@@ -28,8 +28,8 @@
           src="/demo.gif"
           alt="Quick walkthrough of the storytelling prompt in action"
           loading="lazy"
-          on:load={onLoad}
-          on:error={onError}
+          onload={onLoad}
+          onerror={onError}
         />
 
         {#if !imgLoaded || imgFailed}
