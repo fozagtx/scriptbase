@@ -1,13 +1,15 @@
 <script>
-  let imgLoaded = $state(false);
-  let imgFailed = $state(false);
+  const videoId = 'b4GqJf7ccWI';
 
-  function onLoad() {
-    imgLoaded = true;
-  }
+  // Silent autoplay loop, no controls — mimics a GIF.
+  const previewSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&iv_load_policy=3`;
+  // Full player with audio, controls, autoplay (allowed because user-gestured).
+  const fullSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&playsinline=1&modestbranding=1`;
 
-  function onError() {
-    imgFailed = true;
+  let playing = $state(false);
+
+  function startPlayback() {
+    playing = true;
   }
 </script>
 
@@ -17,42 +19,42 @@
     <span class="ambient-orb orb-br" aria-hidden="true"></span>
 
     <article class="demo-card">
-      <div class="demo-media" class:loaded={imgLoaded} class:failed={imgFailed}>
+      <div class="demo-media" class:playing>
         <div class="media-chrome">
           <span class="rec-dot"></span>
-          <span class="rec-label">DEMO · 60s walkthrough</span>
+          <span class="rec-label">
+            {playing ? 'PLAYING · with audio' : 'PREVIEW · click to play'}
+          </span>
         </div>
 
-        <img
-          class="demo-gif"
-          src="/demo.gif"
-          alt="Quick walkthrough of the storytelling prompt in action"
-          loading="lazy"
-          onload={onLoad}
-          onerror={onError}
-        />
+        <div class="iframe-wrap">
+          <iframe
+            class="yt-iframe"
+            src={playing ? fullSrc : previewSrc}
+            title="Walkthrough video"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen
+          ></iframe>
+        </div>
 
-        {#if !imgLoaded || imgFailed}
-          <div class="demo-placeholder" aria-hidden="true">
-            <div class="placeholder-grid"></div>
-            <div class="placeholder-center">
-              <div class="placeholder-icon">
-                <svg viewBox="0 0 24 24" width="32" height="32">
-                  <path
-                    d="M8 5v14l11-7z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-              <p class="placeholder-text">
-                Drop your demo GIF at
-                <code>/public/demo.gif</code>
-              </p>
-            </div>
-          </div>
+        {#if !playing}
+          <button
+            class="play-overlay"
+            onclick={startPlayback}
+            type="button"
+            aria-label="Play walkthrough with sound"
+          >
+            <span class="play-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="34" height="34">
+                <path d="M8 5v14l11-7z" fill="currentColor" />
+              </svg>
+            </span>
+            <span class="play-label">Play with sound</span>
+          </button>
+          <div class="media-gradient"></div>
         {/if}
-
-        <div class="media-overlay"></div>
       </div>
 
       <div class="demo-body">
@@ -70,17 +72,12 @@
         </p>
 
         <div class="demo-ctas">
-          <a
-            class="cta-primary"
-            href="https://youtu.be/jqdEqfHD22A"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <button class="cta-primary" type="button" onclick={startPlayback}>
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
               <path d="M8 5v14l11-7z" fill="currentColor" />
             </svg>
-            Watch the walkthrough
-          </a>
+            {playing ? 'Playing' : 'Play the walkthrough'}
+          </button>
           <a class="cta-secondary" href="#prompt">
             Skip, just give me the prompt
             <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
@@ -167,8 +164,8 @@
   /* Media side */
   .demo-media {
     position: relative;
-    aspect-ratio: 4 / 3;
-    background: linear-gradient(135deg, #0a1e3d 0%, #002259 100%);
+    aspect-ratio: 16 / 10;
+    background: #000;
     overflow: hidden;
   }
 
@@ -176,22 +173,23 @@
     position: absolute;
     top: 14px;
     left: 14px;
-    z-index: 3;
+    z-index: 4;
     display: inline-flex;
     align-items: center;
     gap: 8px;
     padding: 6px 12px 6px 10px;
     border-radius: 9999px;
-    background: rgba(0, 34, 89, 0.6);
+    background: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.18);
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 11px;
+    font-size: 10.5px;
     color: var(--white);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
+    pointer-events: none;
   }
 
   .rec-dot {
@@ -208,112 +206,101 @@
     50% { opacity: 0.4; }
   }
 
-  .demo-gif {
+  /* iframe wrap — oversized + centered crops YouTube's letterboxing
+     so the silent loop looks edge-to-edge in the card. */
+  .iframe-wrap {
     position: absolute;
     inset: 0;
+    overflow: hidden;
+  }
+
+  .yt-iframe {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 175%;
+    height: 175%;
+    transform: translate(-50%, -50%);
+    border: 0;
+    pointer-events: none;
+  }
+
+  /* Once the user has clicked play, restore full controls and stop cropping. */
+  .demo-media.playing .yt-iframe {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    opacity: 0;
-    transition: opacity 0.4s var(--ease-out);
-    z-index: 1;
+    pointer-events: auto;
   }
 
-  .demo-media.loaded:not(.failed) .demo-gif {
-    opacity: 1;
-  }
-
-  .demo-placeholder {
+  .media-gradient {
     position: absolute;
     inset: 0;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0) 30%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
+    pointer-events: none;
     z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background:
-      radial-gradient(
-        circle at 30% 20%,
-        rgba(121, 173, 248, 0.25) 0%,
-        rgba(0, 34, 89, 0) 50%
-      ),
-      radial-gradient(
-        circle at 70% 80%,
-        rgba(38, 112, 220, 0.2) 0%,
-        rgba(0, 34, 89, 0) 50%
-      );
   }
 
-  .placeholder-grid {
+  .play-overlay {
     position: absolute;
     inset: 0;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-    background-size: 32px 32px;
-    mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
-    -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
-  }
-
-  .placeholder-center {
-    position: relative;
-    z-index: 1;
+    z-index: 3;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 14px;
-    text-align: center;
-    padding: 20px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    color: var(--white);
+    transition: backdrop-filter 0.3s var(--ease-out);
   }
 
-  .placeholder-icon {
-    width: 72px;
-    height: 72px;
+  .play-overlay:hover .play-icon {
+    transform: scale(1.06);
+    filter: brightness(1.05);
+  }
+
+  .play-icon {
+    width: 88px;
+    height: 88px;
     border-radius: 9999px;
     background: rgba(255, 255, 255, 0.95);
     color: var(--blue-700);
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.92);
     box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.8) inset,
-      0 14px 32px rgba(0, 0, 0, 0.3);
+      0 1px 0 rgba(255, 255, 255, 0.85) inset,
+      0 14px 40px rgba(0, 0, 0, 0.5);
+    transition:
+      transform 0.25s var(--ease-out),
+      filter 0.25s var(--ease-out);
   }
 
-  .placeholder-icon svg {
-    margin-left: 4px;
+  .play-icon svg {
+    margin-left: 5px;
   }
 
-  .placeholder-text {
+  .play-label {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 14px;
+    border-radius: 9999px;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     font-family: var(--font-sans);
+    font-weight: 600;
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.65);
     letter-spacing: -0.2px;
-    max-width: 240px;
-    line-height: 1.5;
-  }
-
-  .placeholder-text code {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 11px;
     color: var(--white);
-    background: rgba(255, 255, 255, 0.12);
-    padding: 1px 6px;
-    border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-  }
-
-  .media-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      to right,
-      rgba(0, 34, 89, 0) 80%,
-      rgba(255, 255, 255, 0.4) 100%
-    );
-    pointer-events: none;
-    z-index: 2;
   }
 
   /* Body side */
@@ -402,6 +389,7 @@
     transition:
       transform var(--transition),
       filter var(--transition);
+    cursor: pointer;
   }
 
   .cta-primary:hover {
@@ -442,7 +430,7 @@
       grid-template-columns: 1fr;
     }
     .demo-media {
-      aspect-ratio: 16 / 10;
+      aspect-ratio: 16 / 9;
     }
     .demo-body {
       padding: 24px 24px 26px;
